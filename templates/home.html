@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Choose Test Type</h2>
+<a href="{{ url_for('ielts') }}" class="button" data-load>IELTS</a>
+<a href="{{ url_for('inprogress') }}" class="button" data-load>CELLPIP</a>
+{% endblock %}

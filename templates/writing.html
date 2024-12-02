@@ -1,0 +1,22 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}Writing{% endblock %}
+
+{% block content %}
+<h2>Academic Writing</h2>
+
+
+<h3>Your Answer</h3>
+<textarea id="user-answer" rows="10" cols="50"></textarea>
+<!-- Submit button with added styles for visibility -->
+<button onclick="submitAnswer()" style="display: block; margin-top: 10px;">Submit Answer</button>
+
+<script>
+     
+    
+</script>
+
+<a href="{{ url_for('academic') }}" class="button" data-load>Back to Academic</a>
+{% endblock %}

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IELTS Test{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* CSS for styling the page */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #content {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #chatbox {
+            padding: 20px;
+        }
+
+        #messages {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+        }
+
+        #messages div {
+            margin-bottom: 10px;
+        }
+
+        #user-input {
+            width: calc(100% - 120px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        h2 {
+            margin: 0;
+        }
+
+        .header {
+            text-align: center;
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <div class="header">
+            <h1>IELTS/CELPIP Exam Prep Assistant</h1>
+        </div>
+        <div id="chatbox">
+            <div id="messages">
+                <!-- Display the first question here -->
+                <div><strong>Assistant:</strong> {{ firstquestion }}</div>
+            </div>
+            <div class="button-container">
+                <input type="text" id="user-input" placeholder="Type your message...">
+                <button onclick="sendMessage()">Send</button>
+                <button onclick="clearChat()">Clear Chat</button>
+            </div>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        function sendMessage() {
+            const userMessage = document.getElementById('user-input').value;
+
+            fetch('/get_assistance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userMessage, navigation: null })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.innerHTML += `<div><strong>You:</strong> ${userMessage}</div>`;
+                    messagesDiv.innerHTML += `<div><strong>Assistant:</strong> ${data.question}</div>`;
+                    document.getElementById('user-input').value = ''; // Clear the input field
+                    saveChatHistory(); // Save chat history
+                });
+        }
+
+        function submitAnswer() {
+            const userAnswer = document.getElementById('user-answer').value;
+
+            fetch('/submit_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userAnswer, navigation: null })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("content").innerHTML = `
+                    <h2>Rating</h2>
+                    <p>${data.rating}</p>
+                    <a href="{{ url_for('academic') }}" class="button" data-load>Back to Academic</a>
+                `;
+                    localStorage.removeItem('chatHistory'); // Clear chat history after submission
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("a[data-load]").forEach(link => {
+                link.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    const url = this.href;
+                    const pageName = this.innerText;
+                    sendNavigationMessage(pageName); // Send the navigation message
+                    loadPage(url);
+                });
+            });
+            loadChatHistory();
+        });
+
+        function loadPage(url) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("content").innerHTML = data;
+                    document.querySelectorAll("a[data-load]").forEach(link => {
+                        link.addEventListener("click", function (event) {
+                            event.preventDefault();
+                            const url = this.href;
+                            const pageName = this.innerText;
+                            sendNavigationMessage(pageName); // Send the navigation message
+                            loadPage(url);
+                        });
+                    });
+                    loadChatHistory();
+                });
+        }
+
+        function sendNavigationMessage(pageName) {
+            fetch('/get_assistance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ navigation: `User navigated to ${pageName}`, user_input: null })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.innerHTML += `<div><strong>Assistant:</strong> ${data.question}</div>`;
+                    saveChatHistory(); // Save chat history
+                });
+        }
+
+        function loadChatHistory() {
+            if (document.getElementById('chatbox')) {
+                const chatHistory = localStorage.getItem('chatHistory');
+                if (chatHistory) {
+                    document.getElementById('messages').innerHTML = chatHistory;
+                }
+            }
+        }
+
+        function saveChatHistory() {
+            const messages = document.getElementById('messages').innerHTML;
+            localStorage.setItem('chatHistory', messages);
+        }
+
+        // Clear chat function
+        function clearChat() {
+            document.getElementById('messages').innerHTML = ''; // Clear the chat UI
+            localStorage.removeItem('chatHistory'); // Remove chat history from local storage
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = `<div><strong>Assistant:</strong> Hello fellow student I am AM.AI, your personal language exam assistant. I will be with you all along your Language exams prep. So let's begin, choose an exam you want to excel in ;).</div>`; // Reset the assistant's message
+        }
+    </script>
+</body>
+
+</html>

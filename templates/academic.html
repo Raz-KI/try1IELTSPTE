@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Test{% endblock %}
+
+{% block content %}
+<h2>Academic IELTS Test</h2>
+<div>
+    <a href="{{ url_for('reading') }}" class="button" data-load>Reading</a>
+    <a href="{{ url_for('writing') }}" class="button" data-load>Writing</a>
+    <a href="{{ url_for('listening') }}" class="button" data-load>Listening</a>
+    <a href="{{ url_for('speaking') }}" class="button" data-load>Speaking</a>
+</div>
+<a href="{{ url_for('home') }}" class="button" data-load>Back to Home</a>
+{% endblock %}
